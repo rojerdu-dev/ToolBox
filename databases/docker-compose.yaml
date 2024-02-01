@@ -1,9 +1,10 @@
 services:
   mysql:
     image: mysql:latest
+    container_name: mysql-database
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: secret
       MYSQL_USER: web
       MYSQL_USER_PASSWORD: password
     volumes:
