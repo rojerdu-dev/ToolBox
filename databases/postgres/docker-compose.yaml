@@ -12,6 +12,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRESS_PW}
       - POSTGRES_DB=${POSTGRES_DB}  # this is optional
+      - POSTGRES_HOST_AUTH_METHOD=trust  # optional - mainly for local usage purposes
     volumes:
       - pg-data:/var/lib/postgresql/data
     ports:
