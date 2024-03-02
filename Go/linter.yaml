@@ -1,0 +1,43 @@
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - dogsled
+    - dupl
+    - exportloopref
+    - funlen
+    - gochecknoinits
+    - gocritic
+    - goconst
+    - gocyclo
+    - goimports
+    - revive
+    - rowserrcheck
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - staticcheck
+    - stylecheck
+    - sqlclosecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+
+disable:
+  - gofumpt
+  - errcheck
+
+issues:
+  exclude-rules:
+    - path: file.go
+      linters:
+        - linter-name1
+        - linter-name2
