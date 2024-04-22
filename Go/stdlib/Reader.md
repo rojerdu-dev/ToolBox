@@ -1,0 +1,4 @@
+TODO
+
+Cover:
+    - Reader interface
