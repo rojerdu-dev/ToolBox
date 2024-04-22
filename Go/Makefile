@@ -19,6 +19,11 @@ test_coverage:
 vet:
 	@go vet
 
+format:
+	@gofmt -s -w .
+	@goimports -w .
+	@echo "\n go fmt and imports -> done!"
+
 lint:
 	@golangci-lint run
 
