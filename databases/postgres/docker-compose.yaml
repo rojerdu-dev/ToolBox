@@ -7,10 +7,10 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
-      retires: 5
+      retries: 5
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRESS_PW}
+      - POSTGRES_PASSWORD=${POSTGRES_PW}
       - POSTGRES_DB=${POSTGRES_DB}  # this is optional
       - POSTGRES_HOST_AUTH_METHOD=trust  # optional - mainly for local usage purposes
     volumes:
