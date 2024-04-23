@@ -1,71 +1,172 @@
-TODO
-
-To build Docker images, you must first start with a Dockerfile.
-
-A Dockerfile is a text file named Dockerfile and has no file extension
+Dockerfiles
 
 Create Dockerfiles
 
-```
-FROM <base image> # get from https://hub.docker.com
+To build Docker images, you first need a Dockerfile. A Dockerfile is a text file named Dockerfile and has no file extension.
 
-# set working directory inside image
+```
+# syntax=docker/dockerfile:1
+FROM <base image>  
+
+WORKDIR <path>
+
+COPY <host-path> <image-path>
+
+RUN <command>
+
+ENV <name> <value>
+
+EXPOSE <port-number>
+
+USER <user-or-uid>
+
+CMD ["<command>", "<arg1>"]
+ 
+
+```
+
+Example Dockerfile for Go
+```
+# syntax=docker/dockerfile:1
+FROM golang:1.22.2-bullseye
+
+# Set destination for COPY 
 WORKDIR /app
 
-# copy source code from host machine to image
-# (host: your development machine or server)
-# the first dot (.) is the current working directory (CWD)
-# of the host. 
-# the second dot (.) is the CWD of the image
-COPY . .
+# Download Go Modules
+COPY go.mod go.sum ./
+RUN go mod download
 
-# run any shell command inside the image
-RUN <command> # e.g. [npm run build]
+# Copy source code
+COPY *.go ./
 
-# does not really expose the port 80 
-# serves only as documentation so we know which port to expose
-EXPOSE 80   # expose ports with the --publish flag
+# Build
+RUN CGO_ENABLED=0 GOOS=linux go build -o ./api
 
-# command gets executed when container starts
-CMD <command>  # e.g. ["node", "server.js"]
+# Optional - document in Dockerfile what ports app will listen on by default
+EXPOSE 8080
 
-```
-
-Create Multi-Stage Dockerfiles
-
-Multistage Dockerfiles ar eused to optimize Dockerfiles. 
-One use case is to create a builder and a serve stage with separate base images. 
-This strategy can be used to make the final image smaller and have a lower attack because it has fewer system libraries.
-Each stage starts with FROM.
-
-```
-# As lets you alias the current stage with a variable name
-FROM <base image> as builder
-
-# now do something, install dependencies, or build your code
-RUN <command>  # e.g., g++ main.cpp
-
-# second stage can use a smaller image
-# small images are based on alpine 
-# or you can build FROM scratch (this is a Docker image)
-# if you do not need any system libraries
-FROM scratch as serve
-
-# now copy files from builder stage
-# e.g. copy binary file that you build in that stage
-COPY --from=builder ./api ./api
-
-# command gets executed when container starts
+# Run
 CMD ["./api"]
 
 ```
 
-Create Docker Images
-```
-# <path> sets the context for the docker build command
-# use dot (.) to use the CWD of the host machine to find the Dockerfile
-$ docker build <path>
-$ docker build .
+Create Multi-stage Dockerfiles
+A multi-stage build build can carry over artifacts from one build stage to another. Every build stage can be instantiated from a different base image. The resulting image is much lighter as a result.
 
- $ docker build --file ./path/to/Dockerfile
 ```
+# syntax=docker/dockerfile:1
+FROM golang:1.22.2-bullseye AS build-stage
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY *.go ./
+
+RUN CGO_ENABLED=0 GOOS=linux go build -o ./api
+
+# Run tests in container
+FROM build-stage AS run-test-stage
+RUN go test -v ./...
+
+# Deploy application binary into a lean image
+FROM gcr.io/distroless/base-debian11 AS build-release-stage
+
+WORKDIR /
+
+COPY --from=build-stage ./api ./api
+
+EXPOSE 8080
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["./api"]
+
+
+```
+
+Create Docker Images
+
+Use ```docker build <path>``` to create a Docker image. ```<path>``` sets the context for the docker build command.
+
+
+1. Use the CWD of the host machine to find the Dockerfile
+
+```$ docker build .                                 ```
+
+2. Specify Dockerfile (-f, --file)
+
+```$ docker build --file ./path/to/Dockerfile       ```
+
+
+3. Tag an image (-t, --tag)
+
+```$ docker build -t . <user>/<repo>:<version>      ```
+
+```$ docker build -t . rhaegarrr/test:0.1.0         ```
+
+4. List Images
+```$ docker image ls                                ```
+
+
+Create Docker Containers
+Docker containers are just running images
+
+Run Docker container from image
+```$ docker run <image-name>                                ```
+
+Run public images from Docker Hub or private repo
+```$ docker run https://privateregistroy.com/<image-name>   ```
+
+Run in detached mode
+```$ docker run --detached <image-name>                     ```
+
+List all containers
+```$ docker container ls                                    ```
+```$ docker ps                                              ```
+
+List all containers, including stopped ones
+```$ docker container ls --all                              ```
+```$ docker ps -a                                           ```
+
+Rename a container
+```$ docker rename curr_container_name new_container_name   ```
+
+Stop a container
+```$ docker stop <container-id>                             ```
+
+Remove a container, but this only works on stopped containers
+```$ docker rm <container-id>                               ```
+
+Start a stopped container
+```$ docker start <container-id>                            ```
+
+Restart a running container
+```$ docker restart <container-id>                          ```
+
+Automatically remove a container when it's stopped
+```$ docker run -rm <image-name>                            ```
+
+
+Access Docker Containers
+In Docker, publishing a container's ports means it becomes availabe to not only the Docker host but also the outside world as well.
+```$ docker run --publish <host-port>:<container-port> <image-name> ```
+
+Execute shell command in a container
+```$ docker exec --interactive --tty <container-id> sh```
+```$ docker exec -it --tty <container-id> /bin/bash```
+
+
+Create Docker Volumes
+Volumes are needed to persist data from Docker containers between starts. When a container is removed, all data from the container will be lost if you do not use volumes.
+
+Use a named volume (Docker handles location on host)
+```$ docker run --volume <volume-name>:/path/in/container <image-name>   ```
+
+Use a mounted volume (You handle location on host)
+```$ docker run --volume /path/on/host:/path/in/container <image-name>   ```
+
+List all volumes, including metadata
+```$ docker volume ls                                                    ```
